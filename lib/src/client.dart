@@ -183,13 +183,13 @@ class Client {
 
         _processOp();
       }
-      }, onDone: () {
-        _setStatus(Status.disconnected);
-        close();
-      }, onError: (err, s) {
-        _listenerErrorStreamController.add(ListenerError('_channelStream error', err, s));
-        _setStatus(Status.disconnected);
-        close();
+    }, onDone: () {
+      _setStatus(Status.disconnected);
+      close();
+    }, onError: (err, s) {
+      _listenerErrorStreamController.add(ListenerError('_channelStream error', err, s));
+      _setStatus(Status.disconnected);
+      close();
     });
   }
 
@@ -333,7 +333,6 @@ class Client {
             _setStatus(Status.disconnected);
           });
 
-          _tcpSocket?.dra
           return true;
         case 'tls':
           _tlsRequired = true;
