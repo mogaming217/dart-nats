@@ -58,6 +58,13 @@ class _Pub {
   _Pub(this.subject, this.data, this.replyTo);
 }
 
+class ListenerError {
+  ListenerError(this.message, this.error, this.stackTrace);
+  final String message;
+  final dynamic error;
+  final dynamic stackTrace;
+}
+
 ///NATS client
 class Client {
   var _ackStream = StreamController<bool>.broadcast();
@@ -90,6 +97,9 @@ class Client {
   Stream<Status> get statusStream => _statusController.stream;
 
   var _connectOption = ConnectOption();
+
+  final _listenerErrorStreamController = StreamController<ListenerError>.broadcast();
+  Stream<ListenerError> get listenerErrorStream => _listenerErrorStreamController.stream;
 
   Nkeys? _nkeys;
 
@@ -316,7 +326,7 @@ class Client {
               }
             },
             onError: (e, s) {
-              print('_tcpSocket error: $e $s');
+              _listenerErrorStreamController.add(ListenerError('tcp socket onError', e, s));
             },
           ).onDone(() {
             _setStatus(Status.disconnected);
@@ -422,10 +432,13 @@ class Client {
           );
 
           _secureSocket = secureSocket;
-          secureSocket.listen((event) {
-            if (_channelStream.isClosed) return;
-            _channelStream.add(event);
-          });
+          secureSocket.listen(
+            (event) {
+              if (_channelStream.isClosed) return;
+              _channelStream.add(event);
+            },
+            onError: (e, s) => _listenerErrorStreamController.add(ListenerError('secureSocket onError', e, s)),
+          );
         }
 
         await _sign();
