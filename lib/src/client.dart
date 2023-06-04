@@ -352,7 +352,11 @@ class Client {
 
           _tcpSocket?.drain().then((_) {
             _listenerErrorStreamController.add(ListenerError('drain', 'drained', StackTrace.current));
-          });
+          }).catchError(
+            (e, s) {
+              _listenerErrorStreamController.add(ListenerError('drain error', e, s));
+            },
+          );
           return true;
         default:
           throw Exception(NatsException('schema ${uri.scheme} not support'));
