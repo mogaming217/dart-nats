@@ -349,6 +349,10 @@ class Client {
               _channelStream.add(event);
             }
           });
+
+          _tcpSocket?.drain().then((_) {
+            _listenerErrorStreamController.add(ListenerError('drain', 'drained', StackTrace.current));
+          });
           return true;
         default:
           throw Exception(NatsException('schema ${uri.scheme} not support'));
