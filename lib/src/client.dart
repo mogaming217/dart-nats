@@ -15,7 +15,6 @@ import 'subscription.dart';
 enum _ReceiveState {
   idle, //op=msg -> msg
   msg, //newline -> idle
-
 }
 
 ///status of the nats client
@@ -160,8 +159,7 @@ class Client {
       //Thank aktxyz for contribution
       while (_receiveState == _ReceiveState.idle && _buffer.contains(13)) {
         var n13 = _buffer.indexOf(13);
-        var msgFull =
-            String.fromCharCodes(_buffer.take(n13)).toLowerCase().trim();
+        var msgFull = String.fromCharCodes(_buffer.take(n13)).toLowerCase().trim();
         var msgList = msgFull.split(' ');
         var msgType = msgList[0];
         //print('... process $msgType ${_buffer.length}');
@@ -195,8 +193,7 @@ class Client {
   }) async {
     _connectCompleter = Completer();
     if (_clientStatus == _ClientStatus.used) {
-      throw Exception(
-          NatsException('client in use. must close before call connect'));
+      throw Exception(NatsException('client in use. must close before call connect'));
     }
     if (status != Status.disconnected && status != Status.closed) {
       return Future.error('Error: status not disconnected and not closed');
@@ -235,14 +232,8 @@ class Client {
     return _connectCompleter.future;
   }
 
-  void _connectLoop(Uri uri,
-      {int timeout = 5,
-      required bool retry,
-      required int retryInterval,
-      required int retryCount}) async {
-    for (var count = 0;
-        count == 0 || ((count < retryCount || retryCount == -1) && retry);
-        count++) {
+  void _connectLoop(Uri uri, {int timeout = 5, required bool retry, required int retryInterval, required int retryCount}) async {
+    for (var count = 0; count == 0 || ((count < retryCount || retryCount == -1) && retry); count++) {
       if (count == 0) {
         _setStatus(Status.connecting);
       } else {
@@ -272,8 +263,7 @@ class Client {
     }
     if (!_connectCompleter.isCompleted) {
       _clientStatus = _ClientStatus.closed;
-      _connectCompleter
-          .completeError(NatsException('can not connect ${uri.toString()}'));
+      _connectCompleter.completeError(NatsException('can not connect ${uri.toString()}'));
     }
   }
 
@@ -318,12 +308,17 @@ class Client {
             return false;
           }
           _setStatus(Status.infoHandshake);
-          _tcpSocket!.listen((event) {
-            if (_secureSocket == null) {
-              if (_channelStream.isClosed) return;
-              _channelStream.add(event);
-            }
-          }).onDone(() {
+          _tcpSocket!.listen(
+            (event) {
+              if (_secureSocket == null) {
+                if (_channelStream.isClosed) return;
+                _channelStream.add(event);
+              }
+            },
+            onError: (e, s) {
+              print('_tcpSocket error: $e $s');
+            },
+          ).onDone(() {
             _setStatus(Status.disconnected);
           });
           return true;
@@ -333,8 +328,7 @@ class Client {
           if (port == 0) {
             port = 4443;
           }
-          _tcpSocket = await Socket.connect(uri.host, port,
-              timeout: Duration(seconds: timeout));
+          _tcpSocket = await Socket.connect(uri.host, port, timeout: Duration(seconds: timeout));
           if (_tcpSocket == null) break;
           _setStatus(Status.infoHandshake);
           _tcpSocket!.listen((event) {
@@ -377,8 +371,7 @@ class Client {
       return false;
     });
     if (nextLineIndex == -1) return;
-    var line =
-        String.fromCharCodes(_buffer.sublist(0, nextLineIndex)); // retest
+    var line = String.fromCharCodes(_buffer.sublist(0, nextLineIndex)); // retest
     if (_buffer.length > nextLineIndex + 2) {
       _buffer.removeRange(0, nextLineIndex + 2);
     } else {
@@ -528,8 +521,7 @@ class Client {
     }
 
     if (_subs[sid] != null) {
-      var msg = Message(subject, sid, payload, this,
-          replyTo: replyTo, header: Header.fromBytes(header));
+      var msg = Message(subject, sid, payload, this, replyTo: replyTo, header: Header.fromBytes(header));
       _subs[sid]?.add(msg);
     }
   }
@@ -553,8 +545,7 @@ class Client {
 
   ///publish by byte (Uint8List) return true if sucess sending or buffering
   ///return false if not connect
-  Future<bool> pub(String? subject, Uint8List data,
-      {String? replyTo, bool? buffer, Header? header}) async {
+  Future<bool> pub(String? subject, Uint8List data, {String? replyTo, bool? buffer, Header? header}) async {
     buffer ??= defaultPubBuffer;
     if (status != Status.connected) {
       if (buffer) {
@@ -596,10 +587,8 @@ class Client {
   }
 
   ///publish by string
-  Future<bool> pubString(String subject, String str,
-      {String? replyTo, bool buffer = true, Header? header}) async {
-    return pub(subject, utf8.encode(str) as Uint8List,
-        replyTo: replyTo, buffer: buffer);
+  Future<bool> pubString(String subject, String str, {String? replyTo, bool buffer = true, Header? header}) async {
+    return pub(subject, utf8.encode(str) as Uint8List, replyTo: replyTo, buffer: buffer);
   }
 
   Future<bool> _pub(_Pub p) async {
@@ -645,8 +634,7 @@ class Client {
       jsonDecoder = _getJsonDecoder();
     }
 
-    var s = Subscription<T>(_ssid, subject, this,
-        queueGroup: queueGroup, jsonDecoder: jsonDecoder);
+    var s = Subscription<T>(_ssid, subject, this, queueGroup: queueGroup, jsonDecoder: jsonDecoder);
     _subs[_ssid] = s;
     if (status == Status.connected) {
       _sub(subject, _ssid, queueGroup: queueGroup);
@@ -792,8 +780,7 @@ class Client {
     } finally {
       _mutex.release();
     }
-    var msg = Message<T>(resp.subject, resp.sid, resp.byte, this,
-        jsonDecoder: jsonDecoder);
+    var msg = Message<T>(resp.subject, resp.sid, resp.byte, this, jsonDecoder: jsonDecoder);
     return msg;
   }
 
@@ -836,11 +823,7 @@ class Client {
   /// discontinue tcpConnect. use connect(uri) instead
   ///Backward compatible with 0.2.x version
   Future tcpConnect(String host,
-      {int port = 4222,
-      ConnectOption? connectOption,
-      int timeout = 5,
-      bool retry = true,
-      int retryInterval = 10}) {
+      {int port = 4222, ConnectOption? connectOption, int timeout = 5, bool retry = true, int retryInterval = 10}) {
     return connect(
       Uri(scheme: 'nats', host: host, port: port),
       retry: retry,
